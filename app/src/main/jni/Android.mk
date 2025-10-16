@@ -16,7 +16,8 @@ LOCAL_SRC_FILES := \
     MemCommon.cpp \
     DeviceInfo.cpp \
     Common_Sensor.cpp \
-    Xposed.cpp
+    Xposed.cpp \
+    ElfFileReader.cpp
 
 LOCAL_CPPFLAGS := -std=c++17
 LOCAL_LDLIBS := -llog -landroid     # 不要 -lc++

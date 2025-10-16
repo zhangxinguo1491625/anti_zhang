@@ -61,8 +61,8 @@ public class MainActivity extends AppCompatActivity {
         JSONObject jsonObject = new JSONObject(smap);
         textView.setText(jsonObject.toString());
     }
-    private String getprop(String prop){
-        ClassLoader.getSystemClassLoader()
+    private String getprop(String prop) throws ClassNotFoundException {
+        ClassLoader.getSystemClassLoader().loadClass("");
 
     }
 }

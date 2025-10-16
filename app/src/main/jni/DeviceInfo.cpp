@@ -368,6 +368,7 @@ namespace CDeviceInfo {
     std::string getPackagePath(JNIEnv* env){
         if(env == nullptr){
             __android_log_print(ANDROID_LOG_DEBUG, "getPackagePath", "wrong");
+            return "";
         }
         jclass contextCls = env->FindClass("android/content/Context");
         jmethodID getApplicationInfo_methodid = env->GetMethodID(contextCls, "getApplicationInfo", "()Landroid/content/pm/ApplicationInfo;");
