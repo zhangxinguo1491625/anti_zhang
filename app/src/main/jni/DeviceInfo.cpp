@@ -340,6 +340,14 @@ namespace CDeviceInfo {
         jint sdk_int = env->GetStaticIntField(version_cls,sdk_int_field);
         return sdk_int;
     }
+
+    int device_sdk_int(){
+        jclass version_cls = g_env->FindClass("android/os/Build$VERSION");
+        jfieldID sdk_int_field = g_env->GetStaticFieldID(version_cls,"SDK_INT","I");
+        jint sdk_int = g_env->GetStaticIntField(version_cls,sdk_int_field);
+        return sdk_int;
+    }
+
     std::string get_sim_property(){
         std::vector<std::string> propvects = {"gsm.operator.alpha",
                                               "gsm.operator.iso-country",

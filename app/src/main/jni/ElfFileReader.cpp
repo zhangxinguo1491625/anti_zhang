@@ -126,6 +126,43 @@ ElfFileReader::ElfFileReader(const char *filename, bool read_from_maps){
     }
     initBias();
 }
+ElfFileReader::~ElfFileReader(){
+    if(m_fd > 0){
+        close(m_fd);
+    }
+
+    if(m_pStrtab){
+        free(m_pStrtab);
+    }
+
+    if(m_pSymtab){
+        free(m_pSymtab);
+    }
+
+    if(m_pShdr){
+        free(m_pShdr);
+    }
+
+    if(m_pProgramHeader){
+        free(m_pProgramHeader);
+    }
+
+    if (m_pDynsym) {
+        free(m_pDynsym);
+    }
+
+    if (m_pStrDyn) {
+        free(m_pStrDyn);
+    }
+
+    if (m_pDyn) {
+        free(m_pDyn);
+    }
+
+    if (m_pShStrtab) {
+        free(m_pShStrtab);
+    }
+}
 void ElfFileReader::parseSection(){
     if(m_pShStrtab == NULL || m_pShdr == NULL) return;
     for(int i = 0; i < m_Ehdr.e_shnum; i++){
@@ -167,5 +204,158 @@ void ElfFileReader::parseSection(){
     }
 }
 void ElfFileReader::parseSegment(){
+    if(m_pProgramHeader == NULL) return;
 
+    for(int i = 0; i < m_Ehdr.e_phnum; i++){
+        if(m_pProgramHeader[i].p_type == PT_DYNAMIC){
+            m_pDyn = (ElfW(Dyn) *)malloc(m_pProgramHeader[i].p_filesz);
+            pread(m_fd, m_pDyn, m_pProgramHeader[i].p_filesz, m_pProgramHeader[i].p_offset);
+            int dynamic_size= m_pProgramHeader[i].p_filesz / sizeof(ElfW(Dyn));
+            int strtab_size_=0;
+            unsigned long  offset=0;
+            for(int j=0;j<dynamic_size;j++){
+                if(m_pDyn[j].d_tag==DT_STRSZ){
+                    strtab_size_ = m_pDyn[j].d_un.d_val;
+                }
+                else if(m_pDyn[j].d_tag == DT_STRTAB){
+                    offset=m_pDyn[j].d_un.d_ptr;
+                    offset=getRealAddrByVaddr(offset);
+                }
+            }
+            if(strtab_size_!=0 && offset!=0){
+                m_pStrDyn = (char*)malloc(strtab_size_);
+                pread(m_fd, m_pStrDyn, strtab_size_, offset);
+            }
+        }
+    }
+}
+bool ElfFileReader::getSymBySymtab(const char *symname, void **result, int minsize){
+    __android_log_print(ANDROID_LOG_DEBUG, "ElfFileReader","get symbol %s, m_pStrtab %p, m_pSymtab %p", symname, m_pStrtab, m_pSymtab);
+    if(m_pStrtab == NULL || m_pSymtab == NULL){
+        return false;
+    }
+
+    for(int i = 0 ; i < m_symtabNums; i++){
+        ElfW(Sym) *sym = &(m_pSymtab[i]);
+        char *name = m_pStrtab + sym->st_name;
+        //LOGD("compare name %s with %s",name, symname);
+        if(0 == strcmp(name, symname) && sym->st_size >= minsize){
+            __android_log_print(ANDROID_LOG_DEBUG, "ElfFileReader","find name %s", symname);
+            *result = (void *)( (unsigned long)(sym->st_value)  + (unsigned long)m_pBias);
+            return true;
+        }
+
+    }
+    return false;
+}
+unsigned long ElfFileReader::getRealAddrByVaddr(unsigned long vaddr){
+    for (size_t i = 0; i < m_Ehdr.e_phnum; i++) {
+        ElfW(Phdr) *phdr = &m_pProgramHeader[i];
+        if (phdr->p_vaddr <= vaddr && (phdr->p_vaddr + phdr->p_memsz) > vaddr) {
+            return phdr->p_offset + (vaddr - phdr->p_vaddr);
+        }
+    }
+    return 0;
+}
+
+ElfW(Sym) * ElfFileReader::getSym(const char *symname, char** realSymbol, bool bCompareWhole, void* func){
+    __android_log_print(ANDROID_LOG_DEBUG, "ElfFileReader","get symbol %s, m_pSymtab %p(%d), m_pDynsym %p(%d)", symname, m_pSymtab, m_symtabNums, m_pDynsym, m_dynsymNums);
+    if(m_pStrtab != NULL && m_pSymtab != NULL){
+        for(int i = 0 ; i < m_symtabNums; i++){
+            ElfW(Sym) *sym = &(m_pSymtab[i]);
+            char *name = m_pStrtab + sym->st_name;
+            //LOGD("[%d/%d] : compare name %s with %s", i, m_symtabNums, name, symname);
+            if(0 == strcmp(name, symname) || (!bCompareWhole && strstr(name, symname))){
+                if (sym->st_value == 0) {
+                    continue;
+                }
+                __android_log_print(ANDROID_LOG_DEBUG, "ElfFileReader","find name %s from .symtab", name);
+                if (realSymbol != NULL) {
+                    *realSymbol = name;
+                }
+
+                if(func == nullptr){
+                    return sym;
+                }else{
+                    if(((HookCallbackFunc)func)(getModuleBias(), sym, name)){
+                        return sym;
+                    }
+                }
+            }
+
+        }
+    }
+
+    if (m_pStrDyn != NULL && m_pDynsym != NULL) {
+        for (int i = 0; i < m_dynsymNums; i++) {
+            ElfW(Sym)* sym = &(m_pDynsym[i]);
+            char* name = m_pStrDyn + sym->st_name;
+            //LOGD("[%d/%d] : compare name %s with %s", i, m_dynsymNums, name, symname);
+            if (0 == strcmp(name, symname) || (!bCompareWhole && strstr(name, symname))) {
+                if (sym->st_value == 0) {
+                    continue;
+                }
+                __android_log_print(ANDROID_LOG_DEBUG, "ElfFileReader","find name %s from .dynsym", name);
+                if (realSymbol != NULL) {
+                    *realSymbol = name;
+                }
+
+                if(func == nullptr){
+                    return sym;
+                }else{
+                    if(((HookCallbackFunc)func)(getModuleBias(), sym, name)){
+                        return sym;
+                    }
+                }
+            }
+
+        }
+    }
+    return NULL;
+}
+size_t ElfFileReader::readContent(uint8_t *buffer, size_t size, off_t offset){
+    return pread(m_fd, buffer, size, offset);
+}
+//void *getSymByDynSym();
+void ElfFileReader::initBias(){
+    ElfW(Addr) min_vaddr = UINTPTR_MAX;
+    if(m_pBase != NULL){
+        for(int i = 0; i < m_Ehdr.e_phnum; i++){
+            if(m_pProgramHeader[i].p_type == PT_LOAD){
+                min_vaddr = min_vaddr > m_pProgramHeader[i].p_vaddr ? m_pProgramHeader[i].p_vaddr : min_vaddr;
+            }
+        }
+        m_pBias = (void *)(((ElfW(Addr))m_pBase) - min_vaddr);
+    }
+}
+
+bool ElfFileReader::getNeededSos(std::vector<std::string> &needsos){
+    if(m_pStrDyn == NULL || m_pDyn == NULL){
+        return false;
+    }
+
+    for(ElfW(Dyn) *d = m_pDyn; d->d_tag != 0; d++){
+        if(d->d_tag == DT_NEEDED){
+            char *name = m_pStrDyn + d->d_un.d_val;
+            needsos.push_back(name);
+        }
+    }
+    return true;
+}
+void* ElfFileReader::getTextSectionInfo(unsigned int& offset, unsigned int& size){
+    void* pText = NULL;
+    if(m_pShStrtab != NULL && m_pShdr != NULL){
+        for(int i = 0; i < m_Ehdr.e_shnum; i++){
+            char *name = m_pShStrtab + m_pShdr[i].sh_name;
+            if(0 == strcmp(name, ".text")) {
+                pText = malloc(m_pShdr[i].sh_size);
+                pread(m_fd, pText, m_pShdr[i].sh_size, m_pShdr[i].sh_offset);
+                offset = m_pShdr[i].sh_offset;
+                size = m_pShdr[i].sh_size;
+                __android_log_print(ANDROID_LOG_DEBUG, "ElfFileReader","text section offset:%08x sh_size:%08x",offset, size);
+            }
+        }
+    }
+
+    return pText;
 }

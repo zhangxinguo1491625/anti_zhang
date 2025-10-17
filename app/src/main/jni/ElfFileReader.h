@@ -21,6 +21,8 @@
 #define ELFW(what) Elf32_ ## what
 #endif
 
+
+typedef bool (*HookCallbackFunc)(void* base, ElfW(Sym)* sym, char* realSymbol);
 class ElfFileReader {
     public:
         ElfFileReader(const char *filename, bool read_from_maps = true);
@@ -34,7 +36,7 @@ class ElfFileReader {
 
         ElfW(Sym) * getSym(const char *symname, char** realSymbol = NULL, bool bCompareWhole = true, void* func = nullptr);
         size_t readContent(uint8_t *buffer, size_t size, off_t offset);
-        void* getModuleBase();
+        void* getModuleBase(){return m_pBase;};
         void* getModuleBias(){return m_pBias;};
         //void *getSymByDynSym();
         void initBias();

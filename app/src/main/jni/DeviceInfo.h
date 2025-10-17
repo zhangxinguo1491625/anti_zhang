@@ -29,6 +29,7 @@ namespace CDeviceInfo {
     std::string getPackagedatafile(JNIEnv* env);
     bool getPackagedatafile_virtual();
     jint sdk_int(JNIEnv* env);
+    int device_sdk_int();
 } // CDeviceInfo
 
 #endif //ZHANG_ANTI_DEVICEINFO_H
