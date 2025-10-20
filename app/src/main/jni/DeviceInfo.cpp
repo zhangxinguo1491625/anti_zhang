@@ -32,10 +32,10 @@ namespace CDeviceInfo {
         device_map["accessibility_package"] = enabled_accessibility_package(env);
         device_map["sensor_list"] = CCommon_Sensor::get_sensor();
         device_map["get_sim_property"] = get_sim_property();
+        device_map["get_cloud"] = get_cloud();
         device_map["packagename"] = get_package(env);
-        device_map["getPackagedatafile"] = getPackagePath(env);
-
-        device_map["getPackagedatafile"] = getPackagePath(env);
+        device_map["getPackagePath"] = getPackagePath(env);
+        device_map["getPackagedatafile"] = getPackagedatafile(env);
         for (auto &p: device_map) {
             restring = restring + p.first + ":" + p.second + ";";
         }
@@ -334,20 +334,49 @@ namespace CDeviceInfo {
     std::string get_proxy(){
         return Common::get_property("http.proxyHost") + ":" + Common::get_property("http.proxyPort");
     }
+    std::string get_cloud(){
+        std::string res;
+        std::string ro_hardware_camera_property = Common::get_property("ro.hardware.camera");
+        std::string ro_vendor_rk_sdk_property = Common::get_property("ro.vendor.rk_sdk");
+        std::string com_cph_mainkeys_property = Common::get_property("com.cph.mainkeys");
+        std::string com_cph_bandwidth_limit_property = Common::get_property("com.cph.bandwidth_limit");
+        std::string phone_id_property = Common::get_property("phone.id");
+        std::string storage_cloud_mode_property = Common::get_property("storage.cloud.mode");
+        if (ro_hardware_camera_property == "rk30board" || !ro_hardware_camera_property.empty()) {
+            res.append("rk:1,");
+        }
+        // 河马云
+        if (ro_vendor_rk_sdk_property == "longene") {
+            res.append("hm:1,");
+        }
+        // 华为云 (鸟人云，移动)
+        // https://support.huaweicloud.com/intl/zh-cn/api-cph/cph_api_appendix_03.html
+        if (!com_cph_mainkeys_property.empty() || !com_cph_bandwidth_limit_property.empty()) {
+            res.append("hw:1,");
+        }
+        // 百度云（红手指）
+        if (!storage_cloud_mode_property.empty()) {
+            res.append("bd:1,");
+        }
+        // phone.id
+        if (!phone_id_property.empty()) {
+            res.append("id:1,");
+        }
+        res[res.length()-1] = ';';
+        return res;
+    }
     jint sdk_int(JNIEnv* env){
         jclass version_cls = env->FindClass("android/os/Build$VERSION");
         jfieldID sdk_int_field = env->GetStaticFieldID(version_cls,"SDK_INT","I");
         jint sdk_int = env->GetStaticIntField(version_cls,sdk_int_field);
         return sdk_int;
     }
-
     int device_sdk_int(){
         jclass version_cls = g_env->FindClass("android/os/Build$VERSION");
         jfieldID sdk_int_field = g_env->GetStaticFieldID(version_cls,"SDK_INT","I");
         jint sdk_int = g_env->GetStaticIntField(version_cls,sdk_int_field);
         return sdk_int;
     }
-
     std::string get_sim_property(){
         std::vector<std::string> propvects = {"gsm.operator.alpha",
                                               "gsm.operator.iso-country",

@@ -3,14 +3,17 @@
 //
 
 #include "Xposed.h"
+#include "Common.h"
+#include "ElfFileReader.h"
 #include <jni.h>
 #include <string>
 #include <vector>
 #include <unistd.h>
+#include <android/log.h>
 
 namespace CXposed {
     bool Check_Xposed(JNIEnv* env){
-        if(Check_Xposed_class(env)) {
+        if(Check_Xposed_class(env)||Check_Xposed_file()||IsPropertyExist()||IsXposedSymbolExist()) {
             return true;
         }
         return false;
@@ -24,7 +27,7 @@ namespace CXposed {
         }
         return false;
     }
-    bool Check_Xposed_file(JNIEnv* env){
+    bool Check_Xposed_file(){
         std::vector<std::string> pathenvs = {
                 "/sbin/.magisk/modules/riru_lsposed",
                 "/data/adb/lspd",
@@ -50,6 +53,32 @@ namespace CXposed {
             }
         }
         return false;
+    }
+    bool IsPropertyExist(){
+        if(Common::get_property("vxp").empty()){
+            return false;
+        }
+        return true;
+    }
+    bool IsXposedSymbolExist(){
+        bool bFound = false;
+        std::vector<std::string> check_sym_list;
+
+        //check_sym_list.push_back(STR("EnableXposedHook"));
+        check_sym_list.push_back("xposed_callback");
+
+        ElfFileReader elffile("libart.so");
+        for(auto item : check_sym_list){
+            char* realSymbol = nullptr;
+            ElfW(Sym)* sym = elffile.getSym(item.c_str(), &realSymbol, false);
+            if (sym != nullptr) {
+                __android_log_print(ANDROID_LOG_DEBUG, "ElfFileReader","%s find symbol %s", __FUNCTION__, realSymbol);
+                bFound = true;
+                return bFound;
+            }
+        }
+
+        return bFound;
     }
     jobject Load_Class(JNIEnv* env,const std::string& className){
         jclass classloader_cls = env->FindClass("java/lang/ClassLoader");

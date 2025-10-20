@@ -30,6 +30,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 
+
 import android.os.Build;
 
 
@@ -56,10 +57,14 @@ public class MainActivity extends AppCompatActivity {
         smap.put("checkRoot",String.valueOf(AntiNative.n8()));
         smap.put("checkdeviceinfo",String.valueOf(AntiNative.n6()));
 
+        smap.put("checkDebugger",String.valueOf(AntiNative.n5()));
+        smap.put("checkUnicorn",String.valueOf(AntiNative.n3()));
+
 
         TextView textView = findViewById(R.id.text_view);
         JSONObject jsonObject = new JSONObject(smap);
         textView.setText(jsonObject.toString());
+
     }
 //    private String getprop(String prop) throws ClassNotFoundException {
 //        ClassLoader.getSystemClassLoader().loadClass("");

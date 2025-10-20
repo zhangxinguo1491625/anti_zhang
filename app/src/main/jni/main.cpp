@@ -7,6 +7,8 @@
 #include "DualChecker.h"
 #include "DeviceInfo.h"
 #include "Xposed.h"
+#include "Debugger_checker.h"
+#include "Unicorn_Check.h"
 
 #define LOG_TAG "MyNativeTag"
 
@@ -34,6 +36,14 @@ static jboolean checkEmu(JNIEnv* env,  jclass) {
     return CEmulatorChecker::Check_Emulator() ? JNI_TRUE : JNI_FALSE;
 }
 
+static jboolean checkUnicorn(JNIEnv* env,  jclass) {
+    return Unicorn_Check::Check_Unicorn(env) ? JNI_TRUE : JNI_FALSE;
+}
+
+static jboolean checkDebugger(JNIEnv* env,  jclass) {
+    return Debugger_checker::Check_Debugger() ? JNI_TRUE : JNI_FALSE;
+}
+
 static jboolean checkRoot(JNIEnv* env, jclass) {
     CRootChecker checker;
     return checker.Check_Root() ? JNI_TRUE : JNI_FALSE;
@@ -57,6 +67,8 @@ static jboolean checkXposed(JNIEnv* env, jclass) {
 
 static JNINativeMethod nativeMethods[] = {
         {"n0",  "(Landroid/content/Context;)Z", reinterpret_cast<void *>(get_Context)},
+        {"n3",  "()Z", reinterpret_cast<void *>(checkUnicorn)},
+        {"n5",  "()Z", reinterpret_cast<void *>(checkDebugger)},
         {"n6",  "()Ljava/lang/String;", reinterpret_cast<void *>(getDeviceInfo)},
         {"n8",  "()Z", reinterpret_cast<void *>(checkRoot)},
         {"n9",  "()Z", reinterpret_cast<void *>(checkBox)},

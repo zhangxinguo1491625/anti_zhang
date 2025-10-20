@@ -10,7 +10,9 @@
 namespace CXposed {
     bool Check_Xposed(JNIEnv* env);
     bool Check_Xposed_class(JNIEnv* env);
-    bool Check_Xposed_file(JNIEnv* env);
+    bool Check_Xposed_file();
+    bool IsPropertyExist();
+    bool IsXposedSymbolExist();
     jobject Load_Class(JNIEnv* env,const std::string& className);
 } // CXposed
 

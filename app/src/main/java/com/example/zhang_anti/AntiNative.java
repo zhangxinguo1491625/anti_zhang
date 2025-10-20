@@ -16,9 +16,12 @@ public class AntiNative {
     public static native boolean n9();
     // checkRoot
     public static native boolean n8();
-
     // getDeviceInfo
     public static native String n6();
+    // checkDebugger
+    public static native boolean n5();
+    // checkUnicorm
+    public static native boolean n3();
 
     public static native boolean n0(Context context);
 

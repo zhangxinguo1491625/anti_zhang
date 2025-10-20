@@ -21,6 +21,7 @@ namespace CDeviceInfo {
     std::string get_bootload();
     std::string get_vpn(JNIEnv* env);
     std::string get_proxy();
+    std::string get_cloud();
     std::string get_network_list(JNIEnv* env);
     std::string enabled_accessibility_package(JNIEnv* env);
     std::string get_sim_property();
