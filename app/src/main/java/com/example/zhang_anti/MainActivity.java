@@ -1,7 +1,5 @@
 package com.example.zhang_anti;
 
-import static android.provider.Settings.Secure.ACCESSIBILITY_ENABLED;
-
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.annotation.SuppressLint;
 import android.content.Context;

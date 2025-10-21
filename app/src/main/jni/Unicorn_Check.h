@@ -10,7 +10,7 @@ namespace Unicorn_Check {
     bool checkUnicornByUname();
     bool checkUnicornByStaticMethodId(JNIEnv* env);
     bool checkUnicornByStaticMethodHash(JNIEnv* env);
-    int java_hashCode(const char *str) ;
+    int java_hashCode(const char *str);
 
 } // Unicorn_Check
 

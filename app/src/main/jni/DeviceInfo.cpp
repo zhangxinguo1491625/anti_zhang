@@ -33,6 +33,9 @@ namespace CDeviceInfo {
         device_map["sensor_list"] = CCommon_Sensor::get_sensor();
         device_map["get_sim_property"] = get_sim_property();
         device_map["get_cloud"] = get_cloud();
+        device_map["Tracepid_cmdline"] = get_Tracepid_cmdline();
+        device_map["Tracepid"] = get_Tracepid();
+        device_map["Seccomp"] = get_Seccomp();
         device_map["packagename"] = get_package(env);
         device_map["getPackagePath"] = getPackagePath(env);
         device_map["getPackagedatafile"] = getPackagedatafile(env);
@@ -364,6 +367,66 @@ namespace CDeviceInfo {
         }
         res[res.length()-1] = ';';
         return res;
+    }
+    std::string get_Tracepid_cmdline(){
+        std::string tracepid_str = get_Tracepid();
+        if(tracepid_str != "0" && !tracepid_str.empty()){
+            std::string cmdline = "/proc/" + tracepid_str + "/cmdline";
+            FILE* f = fopen("/proc/self/status", "r");
+            if (!f) {
+                __android_log_print(ANDROID_LOG_DEBUG, "get_Tracepid","[%s] open /proc/self/status failed", __FUNCTION__);
+                return "";
+            }
+            char line[256];
+            fgets(line, sizeof(line), f);
+            std::string line_str(line);
+            return line_str;
+        }
+        return "";
+    }
+    std::string get_Tracepid(){
+        FILE* f = fopen("/proc/self/status", "r");
+        if (!f) {
+            __android_log_print(ANDROID_LOG_DEBUG, "get_Tracepid","[%s] open /proc/self/status failed", __FUNCTION__);
+            return "";
+        }
+        int tracerPid = 0;
+        char line[256];
+        while (fgets(line, sizeof(line), f)) {
+            // Look for "TracerPid:" at line start (robust to spacing)
+            if (strncmp(line, "TracerPid:", 10) == 0) {
+                // parse integer after "TracerPid:"
+                char* p = line + 10;
+                // skip spaces/tabs
+                while (*p == ' ' || *p == '\t') ++p;
+                tracerPid = (int)strtol(p, NULL, 10);
+                break;
+            }
+        }
+        fclose(f);
+        return std::to_string(tracerPid);
+    }
+    std::string get_Seccomp(){
+        FILE* f = fopen("/proc/self/status", "r");
+        if (!f) {
+            __android_log_print(ANDROID_LOG_DEBUG, "get_Tracepid","[%s] open /proc/self/status failed", __FUNCTION__);
+            return "";
+        }
+        int tracerPid = 0;
+        char line[256];
+        while (fgets(line, sizeof(line), f)) {
+            // Look for "TracerPid:" at line start (robust to spacing)
+            if (strncmp(line, "Seccomp:", 8) == 0) {
+                // parse integer after "TracerPid:"
+                char* p = line + 8;
+                // skip spaces/tabs
+                while (*p == ' ' || *p == '\t') ++p;
+                tracerPid = (int)strtol(p, NULL, 10);
+                break;
+            }
+        }
+        fclose(f);
+        return std::to_string(tracerPid);
     }
     jint sdk_int(JNIEnv* env){
         jclass version_cls = env->FindClass("android/os/Build$VERSION");

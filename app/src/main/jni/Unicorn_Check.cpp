@@ -13,6 +13,7 @@ namespace Unicorn_Check {
         if(checkUnicornByUname()||checkUnicornByStaticMethodId(env)||checkUnicornByStaticMethodHash(env)) {
             return true;
         }
+        return false;
     }
     bool checkUnicornByUname(){
         struct utsname u;

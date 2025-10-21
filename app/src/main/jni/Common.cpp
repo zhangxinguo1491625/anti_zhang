@@ -20,7 +20,6 @@ namespace Common {
         __system_property_get(key.c_str(), buf);
         return {buf};
     }
-
     std::vector<std::string> get_env(const std::string &key) {
         std::vector<std::string> paths{};
         if (key.empty()) return paths;
@@ -127,7 +126,6 @@ namespace Common {
         closedir(dir);
         return status;
     }
-
     elfutil::elfutil * getElfUtil(const std::string soname )
     {
         elfutil::elfutil * pElfUtil = NULL;
@@ -152,7 +150,6 @@ namespace Common {
 
         return pElfUtil;
     }
-
     unsigned char * get_addr(const std::string &so_name,const std::string &method_name)
     {
         unsigned char *pSymbol = NULL;

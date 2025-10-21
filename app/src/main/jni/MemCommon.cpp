@@ -6,7 +6,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stdint.h>
-#include <stdint.h>
 #include <string>
 #include <dlfcn.h>
 #include "EmulatorChecker.h"

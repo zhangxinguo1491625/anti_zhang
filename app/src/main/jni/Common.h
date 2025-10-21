@@ -6,6 +6,7 @@
 #define ZHANG_ANTI_COMMON_H
 #include <string>
 #include <vector>
+#include "elfutil.h"
 
 namespace Common {
     std::string get_property(const std::string &key);
@@ -14,6 +15,7 @@ namespace Common {
     void split(const std::string &s, std::vector<std::string> &tokens,
                               const std::string &delimiters);
     bool get_map(const std::string &so_name,unsigned long &so_start,unsigned long &so_end,unsigned long &all_offset);
+    elfutil::elfutil * getElfUtil(const std::string soname );
     unsigned char * get_addr(const std::string &so_name,const std::string &method_name);
     std::vector<std::string> get_task();
 };
